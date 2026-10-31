@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OS Chapter 1 - Quest Revision</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#1d2433;--muted:#5b6478;--blue:#0a4a8c;--gold:#ffc20e;--green:#2a9d5c;--red:#d64545;--line:#dde3ee;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121826;--card:#1b2435;--text:#e8edf7;--muted:#9aa6bf;--blue:#5aa0ea;--gold:#ffc20e;--green:#3cc27a;--red:#ff6b6b;--line:#2d3850;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+header{background:var(--blue);color:#fff;padding:20px 16px 14px}
+header h1{margin:0 0 8px;font-size:1.4rem}
+.stats{display:flex;justify-content:space-between;align-items:center;font-size:.95rem}
+.bar{height:8px;background:rgba(255,255,255,.25);border-radius:8px;margin-top:10px;overflow:hidden}
+#prog{height:100%;width:0;background:var(--gold);transition:width .4s}
+main{max-width:860px;margin:0 auto;padding:16px}
+.intro{color:var(--muted)}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.node{border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center;font:inherit}
+.node .ico{display:block;font-size:1.8rem}
+.node b{display:block}
+.node small{color:var(--muted)}
+.node.open{border-color:var(--blue)}
+.node.done{border-color:var(--green);background:rgba(42,157,92,.12)}
+.node:disabled{opacity:.45;cursor:not-allowed}
+.boss{width:100%;padding:16px;font-size:1.1rem;border:none;border-radius:14px;background:var(--red);color:#fff;cursor:pointer;margin-top:4px}
+.boss:disabled{opacity:.4;cursor:not-allowed}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{background:var(--gold);color:#222;padding:6px 12px;border-radius:999px;font-weight:600;font-size:.9rem}
+.back{background:none;border:1px solid var(--line);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin:14px 0}
+.card ul{margin:0;padding-left:20px}
+.card li{margin:6px 0}
+h2{color:var(--blue)}
+h3{margin:18px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.flip{min-height:110px;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:600;border:2px dashed var(--blue);background:var(--card)}
+.flip .back{display:none;border:none;font-weight:400;color:var(--text);padding:0}
+.flip.on .front{display:none}
+.flip.on .back{display:block}
+.flip.on{border-style:solid;border-color:var(--green)}
+.q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);cursor:pointer;font:inherit}
+.opt:hover:not(:disabled){border-color:var(--blue)}
+.opt.right{background:rgba(42,157,92,.2);border-color:var(--green)}
+.opt.wrong{background:rgba(214,69,69,.18);border-color:var(--red)}
+.opt:disabled{cursor:default}
+.fb{margin:8px 0 0;font-size:.95rem;color:var(--muted);min-height:1.2em}
+.cta{margin-top:12px;padding:12px 22px;border:none;border-radius:10px;background:var(--blue);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.cta:disabled{opacity:.4;cursor:not-allowed}
+#result{font-size:1.05rem;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐧 Operating System 1 - Chapter 1 Quest</h1>
+  <div class="stats"><span>Introduction to Operating Systems</span><span>⭐ <b id="xp">0</b> XP</span></div>
+  <div class="bar"><div id="prog"></div></div>
+</header>
+
+<main>
+  <div id="home">
+    <p class="intro">Clear each level by answering at least 2 of 3 quiz questions correctly. Each correct answer earns 10 XP. Clear every level to unlock the Final Boss!</p>
+    <div id="map" class="map"></div>
+    <button id="bossBtn" class="boss" disabled onclick="openBoss()">🐉 Final Boss: Chapter 1 Mix</button>
+    <h3>🏆 Badges</h3>
+    <div id="badges" class="badges"></div>
+  </div>
+  <div id="play" hidden></div>
+</main>
+
+<script>
+const L = [
+  {name:"Computer Basics", icon:"🖥️", summary:[
+    "A computer is an electronic machine made of hardware (physical parts) and software (programs).",
+    "Computers only understand binary language (0 and 1).",
+    "Every computer follows the cycle Input → Processing → Output."],
+   cards:[["INPUT","Takes input data, e.g. keyboard and mouse"],["PROCESSING","Processes data using CPU & memory"],["OUTPUT","Produces output information, e.g. monitor, printer"],["Binary","The only language computers understand: 0 and 1"]],
+   quiz:[
+    {q:"What language do computers understand?", o:["English","Binary (0 and 1)","Python","Decimal"], a:1, e:"Computers only understand binary: 0 and 1."},
+    {q:"Which stage uses the CPU and memory?", o:["Input","Processing","Output","Storage"], a:1, e:"Processing: the CPU and memory transform the data."},
+    {q:"A computer is made of hardware and…", o:["Electricity","Software","Users","Internet"], a:1, e:"Hardware = physical parts, software = programs."}]},
+
+  {name:"Hardware", icon:"🔧", summary:[
+    "CPU: the brain of the computer. It executes instructions, processes data and controls other components.",
+    "RAM: temporary, fast, volatile memory. ROM: permanent, non-volatile memory.",
+    "Storage (HDD/SSD) stores data and programs permanently, but is slower than RAM.",
+    "The motherboard connects all components and lets them communicate.",
+    "Input devices (keyboard, mouse) send data in; output devices (monitor, speakers, printer) send results out."],
+   cards:[["CPU","The brain: executes instructions and controls components"],["RAM","Temporary, fast, volatile"],["ROM","Permanent, non-volatile"],["Motherboard","Connects all components"]],
+   quiz:[
+    {q:"Which component is called the brain of the computer?", o:["RAM","CPU","Motherboard","SSD"], a:1, e:"The CPU executes instructions and controls other components."},
+    {q:"Which memory is volatile (data is lost when power is off)?", o:["ROM","HDD","RAM","SSD"], a:2, e:"RAM is temporary and volatile."},
+    {q:"Which component connects all other components?", o:["Motherboard","Keyboard","Monitor","ROM"], a:0, e:"The motherboard connects everything so it can communicate."}]},
+
+  {name:"Architecture & Definition", icon:"🧭", summary:[
+    "Operating System (OS): system software that manages hardware and software resources and provides services and an interface for users and applications.",
+    "Layers, top to bottom: Users → Application programs → Operating System → Hardware.",
+    "Examples: Windows, Linux, macOS, iOS, Android, Red Hat, Ubuntu.",
+    "Browser scenario: the OS creates a process, loads the browser from storage into RAM, allocates CPU time, then frees the resources when the browser closes."],
+   cards:[["OS","System software managing hardware and software resources"],["Layers","Users → Applications → OS → Hardware"],["Browser example","Process created → loaded into RAM → CPU time allocated → resources freed on close"],["Is Word an OS?","No. Word is an application. Windows is an OS."]],
+   quiz:[
+    {q:"Which layer sits directly on top of the hardware?", o:["Users","Application programs","Operating System","Browser"], a:2, e:"The OS sits between the applications and the hardware."},
+    {q:"Which of these is an operating system?", o:["Microsoft Word","Google Chrome","Linux","Excel"], a:2, e:"Linux is an OS; the others are applications."},
+    {q:"When you open a browser, what does the OS do first?", o:["Deletes the program","Creates a process for it","Prints the page","Turns off RAM"], a:1, e:"The OS creates a process for the browser."}]},
+
+  {name:"OS Functions", icon:"⚙️", summary:[
+    "Resource allocator: decides between conflicting requests for the same resource.",
+    "Control program: controls program execution to prevent errors and improper use.",
+    "Process management: creation, scheduling, termination, synchronization, communication, resource allocation.",
+    "Memory management: allocates and frees memory, protects processes from each other, maximizes usage.",
+    "File management: create, read, write, delete and organize files, plus permissions.",
+    "Device management: controls I/O through device drivers. Also: user interface, error detection, security & protection, virtualization.",
+    "Program = passive (instructions on disk). Process = a program in execution."],
+   cards:[["Program","Passive: instructions stored on disk, e.g. chrome.exe"],["Process","A program in execution"],["Process states","new → ready → running → waiting/terminated. Running → waiting on I/O; waiting → ready on I/O completion; running → ready on interrupt"],["Device drivers","Translate program requests into hardware commands"]],
+   quiz:[
+    {q:"A passive entity stored on disk is a…", o:["Process","Program","Thread","Interrupt"], a:1, e:"A program is passive; it becomes a process when executed."},
+    {q:"A process moves from running to waiting when…", o:["It is admitted","The scheduler dispatches it","It waits for I/O or an event","It exits"], a:2, e:"Running → waiting happens on I/O or event wait."},
+    {q:"Which OS function protects against unauthorized access?", o:["Memory management","Security & protection","File management","Virtualization"], a:1, e:"Security & protection defends against attacks and unauthorized access."}]},
+
+  {name:"OS Types", icon:"🗂️", summary:[
+    "Batch: jobs run automatically in groups, no user interaction, long turnaround (e.g. payroll).",
+    "Multiprogramming: several programs in memory; the CPU switches when one waits for I/O.",
+    "Multitasking (time-sharing): the CPU rapidly switches between tasks so users can work simultaneously.",
+    "Multiprocessing: two or more CPUs run tasks in parallel, sharing memory and I/O devices.",
+    "Embedded OS: specialized OS for small dedicated devices (e.g. a smart thermostat).",
+    "RTOS: guarantees predictable response times (airbags, industrial robots, medical monitors)."],
+   cards:[["Batch","Jobs in groups, no user interaction"],["Multiprogramming","Switch the CPU when a program waits for I/O"],["Multiprocessing","Two or more CPUs work in parallel"],["RTOS","Predictable response time for critical tasks"]],
+   quiz:[
+    {q:"Which system processes jobs in groups without user interaction?", o:["Batch","Multiprocessing","RTOS","Embedded"], a:0, e:"Batch systems execute collected jobs automatically."},
+    {q:"An airbag controller needs guaranteed response times. Which OS type?", o:["Batch","RTOS","Multitasking","Multiprogramming"], a:1, e:"Airbags are time-critical, so an RTOS fits."},
+    {q:"Which type uses two or more CPUs in parallel?", o:["Multiprogramming","Batch","Multiprocessing","Embedded"], a:2, e:"Multiprocessing = multiple CPUs executing in parallel."}]}
+];
+
+const BOSS = [
+  {q:"Which stage is NOT part of the basic computer cycle?", o:["Input","Processing","Output","Compiling"], a:3, e:"The cycle is Input → Processing → Output."},
+  {q:"Which OS function decides which process runs next on the CPU?", o:["Process scheduling","File management","Virtualization","Device management"], a:0, e:"Scheduling is part of process management."},
+  {q:"Which component is slower than RAM but keeps data permanently?", o:["Storage (HDD/SSD)","CPU","Keyboard","Monitor"], a:0, e:"Storage keeps data permanently but is slower than RAM."},
+  {q:"Which system runs many programs in memory and switches when one waits for I/O?", o:["Multiprogramming","Batch","RTOS","Embedded"], a:0, e:"Multiprogramming increases CPU efficiency this way."},
+  {q:"Which OS component resolves simultaneous requests for the same resource?", o:["Resource allocator","Compiler","Browser","Motherboard"], a:0, e:"The OS acts as a resource allocator."}
+];
+
+const BADGES = ["🏅 Basics Starter","🔧 Hardware Hero","🧭 Architect","⚙️ Function Master","🗂️ Type Expert"];
+
+let xp = 0, done = Array(L.length).fill(false), bossDone = false, badges = [], cur = null, answers = {};
+
+function renderMap(){
+  document.getElementById("map").innerHTML = L.map((l,i)=>{
+    const unlocked = i === 0 || done[i-1];
+    const st = done[i] ? "done" : unlocked ? "open" : "locked";
+    return `<button class="node ${st}" ${unlocked?"":"disabled"} onclick="openLevel(${i})">
+      <span class="ico">${done[i] ? "✅" : l.icon}</span><b>Level ${i+1}</b><small>${l.name}</small></button>`;
+  }).join("");
+  document.getElementById("bossBtn").disabled = !done.every(Boolean);
+  document.getElementById("xp").textContent = xp;
+  const total = L.length + 1, finished = done.filter(Boolean).length + (bossDone ? 1 : 0);
+  document.getElementById("prog").style.width = (finished / total * 100) + "%";
+  document.getElementById("badges").innerHTML = badges.length
+    ? badges.map(b => `<span class="badge">${b}</span>`).join("")
+    : "<small>No badges yet. Clear a level to earn one!</small>";
+}
+
+function openLevel(i){
+  const l = L[i];
+  cur = {idx:i, boss:false, title:`Level ${i+1}: ${l.name}`, summary:l.summary, cards:l.cards, qs:l.quiz};
+  showPlay();
+}
+
+function openBoss(){
+  cur = {idx:-1, boss:true, title:"🐉 Final Boss: Chapter 1 Mix", summary:[], cards:[], qs:BOSS};
+  showPlay();
+}
+
+function showPlay(){
+  answers = {};
+  document.getElementById("home").hidden = true;
+  const p = document.getElementById("play");
+  p.hidden = false;
+  p.innerHTML = `
+    <button class="back" onclick="goHome()">← Quest map</button>
+    <h2>${cur.title}</h2>
+    ${cur.summary.length ? `<section class="card"><h3>📘 Key points</h3><ul>${cur.summary.map(s=>`<li>${s}</li>`).join("")}</ul></section>` : ""}
+    ${cur.cards.length ? `<h3>🃏 Flashcards <small>(click to flip)</small></h3>
+      <div class="cards">${cur.cards.map(([f,b])=>`<div class="flip" onclick="this.classList.toggle('on')"><div class="front">${f}</div><div class="back">${b}</div></div>`).join("")}</div>` : ""}
+    <h3>⚔️ ${cur.boss ? "Boss questions" : "Quiz"}</h3>
+    <div id="qs">${cur.qs.map((q,qi)=>`
+      <div class="q"><p><b>${qi+1}.</b> ${q.q}</p>
+        ${q.o.map((o,oi)=>`<button class="opt" onclick="pick(${qi},${oi})">${o}</button>`).join("")}
+        <p class="fb" id="fb${qi}"></p></div>`).join("")}
+    </div>
+    <button class="cta" id="finish" disabled onclick="finish()">Finish &amp; claim XP</button>
+    <p id="result"></p>`;
+  window.scrollTo(0,0);
+}
+
+function pick(qi,oi){
+  if (answers[qi] !== undefined) return;
+  answers[qi] = oi;
+  const q = cur.qs[qi], ok = oi === q.a;
+  const row = document.querySelectorAll("#qs .q")[qi];
+  row.querySelectorAll(".opt").forEach((b,i)=>{
+    b.disabled = true;
+    if (i === q.a) b.classList.add("right");
+    else if (i === oi) b.classList.add("wrong");
+  });
+  document.getElementById("fb"+qi).textContent = (ok ? "✅ Correct! " : "❌ Not quite. ") + (q.e || "");
+  if (Object.keys(answers).length === cur.qs.length) document.getElementById("finish").disabled = false;
+}
+
+function finish(){
+  const score = cur.qs.filter((q,i)=>answers[i] === q.a).length;
+  const firstTime = cur.boss ? !bossDone : !done[cur.idx];
+  const gained = firstTime ? score * 10 : 0;
+  xp += gained;
+  const res = document.getElementById("result");
+  if (cur.boss){
+    bossDone = true;
+    const win = score >= 4;
+    if (win && !badges.includes("🐉 Boss Slayer")) badges.push("🐉 Boss Slayer");
+    res.innerHTML = `<b>Score ${score}/${cur.qs.length}</b>, +${gained} XP. ${win ? "You defeated the boss! 🎉" : "So close! Review the levels and try again."}`;
+  } else {
+    const win = score >= 2;
+    if (win){
+      done[cur.idx] = true;
+      if (!badges.includes(BADGES[cur.idx])) badges.push(BADGES[cur.idx]);
+    }
+    res.innerHTML = `<b>Score ${score}/${cur.qs.length}</b>, +${gained} XP. ${win ? "Level cleared! 🔓 " + (cur.idx < L.length-1 ? "Next level unlocked." : "Final boss unlocked!") : "You need 2 out of 3 to clear. Try again from the map."}`;
+  }
+  document.getElementById("finish").disabled = true;
+}
+
+function goHome(){
+  cur = null;
+  document.getElementById("play").hidden = true;
+  document.getElementById("home").hidden = false;
+  renderMap();
+  window.scrollTo(0,0);
+}
+
+renderMap();
+</script>
+</body>
+</html>
